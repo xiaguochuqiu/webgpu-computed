@@ -1,5 +1,5 @@
 🌐 Read this in other languages:
-- [简体中文](./build/README.zh-CN.md)
+- [简体中文](/webgpu-computed/README.md)
 
 # webgpu-computed
 
@@ -12,28 +12,12 @@ A simplified WebGPU computing library that encapsulates tedious initialization a
 - 🔧 Support for complex data structures (vectors, matrices)
 - ⚡ High-performance GPU computing
 - 📚 Built-in common WGSL functions
+- ✅ Support node 
 
 ## Installation
 
 ```bash
 npm install webgpu-computed
-```
-
-## Node.js Environment Configuration
-
-You can install the webgpu package
-
-```bash
-npm install webgpu
-```
-
-Then initialize the environment
-
-```js
-import { create, globals } from 'webgpu'
-
-Object.assign(globalThis, globals)
-const navigator = { gpu: create([]) }
 ```
 
 ## Quick Start
@@ -47,6 +31,8 @@ import { GpuComputed } from 'webgpu-computed';
 
 // Initialize WebGPU
 await GpuComputed.init();
+//After using the node environment, please call:
+//GpuComputed.destroy()
 ```
 
 ### 2. Perform Simple Computation

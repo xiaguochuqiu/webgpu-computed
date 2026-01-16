@@ -9,24 +9,12 @@
 - 🔧 支持复杂数据结构（向量、矩阵）
 - ⚡ 高性能 GPU 计算
 - 📚 内置常用 WGSL 函数
+- ✅ 支持Node
 
 ## 安装
 
 ```bash
 npm install webgpu-computed
-```
-
-## node 环境配置
-可安装webgpu包
-```bash
-npm install webgpu
-```
-然后初始化环境
-```js
-import { create, globals } from 'webgpu'
-
-Object.assign(globalThis, globals)
-const navigator = { gpu: create([]) }
 ```
 
 ## 快速开始
@@ -40,6 +28,8 @@ import { GpuComputed } from 'webgpu-computed';
 
 // 初始化 WebGPU
 await GpuComputed.init();
+// node 环境使用完请调用：
+// GpuComputed.destroy()
 ```
 
 ### 2. 执行简单计算

@@ -1,3 +1,4 @@
+import { include } from "./include"
 
 type ValueType =
     | "f32"
@@ -57,11 +58,26 @@ export class GpuComputed {
     constructor() { }
 
     static async init() {
+        if(adapter && device) return
+
+        // 非浏览器环境
+        if(typeof globalThis !== "undefined" && typeof window === 'undefined') {
+            const { create, globals } = await include("webgpu", false)
+            Object.assign(globalThis, globals)
+            if(!globalThis.navigator) (globalThis as any).navigator = {}
+            Object.assign(globalThis.navigator, { gpu: create([]) })
+        }
+
         if(!navigator.gpu) throw new Error("该环境不支持webgpu")
-        adapter = await navigator.gpu.requestAdapter({})
+        if(!adapter) adapter = await navigator.gpu.requestAdapter({})
         if(!adapter) throw new Error("获取适配器失败")
         device = await adapter.requestDevice() as GPUDevice
         if(!adapter) throw new Error("获取设备失败")
+    }
+
+    static destroy() {
+        if(device) device.destroy()
+        device = null
     }
 
     async getDevice() {
