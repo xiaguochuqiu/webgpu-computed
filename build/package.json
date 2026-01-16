@@ -1,0 +1,14 @@
+{
+  "name": "webgpu-computed",
+  "version": "0.0.5",
+  "description": "对webgpu的封装，处理了繁琐的前置工作，只关注wgsl本身逻辑",
+  "main": "./src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "webgpu", "computed", "web", "js"
+  ],
+  "author": "夏过初秋",
+  "license": "ISC"
+}
