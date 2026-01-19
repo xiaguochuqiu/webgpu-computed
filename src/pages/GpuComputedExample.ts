@@ -1,4 +1,5 @@
-import { GpuComputed, WGSL_Fun } from '../utils/GpuComputed';
+import { GpuComputed } from '../utils/GpuComputed';
+import * as WGSL_Fun from '../utils/WGSL_Fun';
 
 // 示例：展示 GpuComputed 的所有功能
 async function runAllFeaturesExample() {
