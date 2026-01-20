@@ -2,6 +2,7 @@ import { include } from "./include"
 
 type WGSl_TYPE =
     | "f32"
+    | "u32"
     | "vec2"
     | "vec3"
     | "vec4"
@@ -44,7 +45,21 @@ interface IStructArray {
     layout: IStruct
 }
 
-type BufferDataType = Record<string, (number[]) | IStruct | IStructArray>
+type BufferDataType = Record<string, (number[]) | ArrayBufferView | IStruct | IStructArray>
+
+type WgslScalarType = "f32" | "i32" | "u32"
+
+function arrayBufferViewToWgslType(
+  value: ArrayBufferView
+): WgslScalarType {
+  if (value instanceof Float32Array) return "f32"
+  if (value instanceof Int32Array) return "i32"
+  if (value instanceof Uint32Array) return "u32"
+
+  throw new Error(
+    `Unsupported ArrayBufferView type: ${value.constructor.name}`
+  )
+}
 
 /** 首字母大写
  * @param str 
@@ -141,9 +156,11 @@ function buildStructTypeByData(data: Record<string, any>) {
     }
 }
 
+
 // 大小为f32数量，并非字节，方便计算(项目用于js的数值计算，全部以f32为主)
 const TYPE_SIZE: Record<WGSl_TYPE, number> = {
     f32: 1,
+    u32: 1,
     vec2: 2,
     vec3: 3,
     vec4: 4,
@@ -155,6 +172,7 @@ const TYPE_SIZE: Record<WGSl_TYPE, number> = {
 // 大小为f32数量，并非字节，方便计算(项目用于js的数值计算，全部以f32为主)
 const TYPE_ALIGN: Record<any, any> = {
     f32: 1,
+    u32: 1,
     vec2: 2,
     vec3: 4,
     vec4: 4,
@@ -163,7 +181,9 @@ const TYPE_ALIGN: Record<any, any> = {
     // array: 1
 }
 
-const wgslTypes = ["f32", "vec2", "vec3", "vec4", "mat3x3", "mat4x4"]
+export class AtomicUint32Array extends Uint32Array { }
+
+const wgslTypes = ["f32", "u32", "vec2", "vec3", "vec4", "mat3x3", "mat4x4"]
 let adapter: GPUAdapter | null = null
 let device: GPUDevice | null = null
 export class GpuComputed {
@@ -209,6 +229,9 @@ export class GpuComputed {
             const value = template[key]
             if (isStruct(value)) improveStruct(value as IStruct)
             else if (isStructArray(value)) improveStructArray(value as IStructArray)
+            else if(Array.isArray(value) && typeof value[0] === 'number') {
+                template[key] = new Float32Array()
+            }
         })
     }
 
@@ -256,8 +279,11 @@ export class GpuComputed {
                 structCodes.push(`struct ${structName} {${code}};`)
                 groupCodes.push(`@group(0) @binding(${index}) var<storage, read_write> ${name}: array<${structName}>;`)
             }
-            else {
-                groupCodes.push(`@group(0) @binding(${index}) var<storage, read_write> ${name}: array<f32>;`)
+            else if( ArrayBuffer.isView(template[name]) && !(template[name] instanceof DataView)) {
+                const value = template[name]
+                const type = arrayBufferViewToWgslType(value)
+                if(value instanceof AtomicUint32Array ) groupCodes.push(`@group(0) @binding(${index}) var<storage, read_write> ${name}: array<atomic<${type}>>;`)
+                else groupCodes.push(`@group(0) @binding(${index}) var<storage, read_write> ${name}: array<${type}>;`)
             }
         })
 
@@ -270,7 +296,7 @@ export class GpuComputed {
 
         } = this.option ?? {}
 
-        const completeCode = /*wgsl*/`
+        const codeFull = /*wgsl*/`
             ${structCodes.join('')}\n${groupCodes.join('')}
             ${beforeCodes.join(' ') ?? ''}
 
@@ -281,7 +307,7 @@ export class GpuComputed {
             }
         `
 
-        this.code = completeCode
+        this.code = codeFull
 
         const groupLayout = device.createBindGroupLayout({
             entries: groupLayoutOption
@@ -294,7 +320,7 @@ export class GpuComputed {
                 bindGroupLayouts: [groupLayout]
             }),
             compute: {
-                module: device.createShaderModule({ code: completeCode, label: '' }),
+                module: device.createShaderModule({ code: codeFull, label: '' }),
                 entryPoint: "main"
             }
         })
@@ -350,12 +376,21 @@ export class GpuComputed {
             else if (isStructArray(tem)) array = buildStructArray(value, tem as IStructArray)
             else if (Array.isArray(value)) array = value
 
-            const float32Array = new Float32Array(array)
+
+            let arrayBuffer: Float32Array | Uint32Array | Int32Array | null = null
+
+            if(tem instanceof Float32Array) arrayBuffer = new Float32Array(array)
+            else if(tem instanceof Uint32Array) arrayBuffer = new Uint32Array(array)
+            else if(tem instanceof Int32Array) arrayBuffer = new Int32Array(array)
+            else arrayBuffer = new Float32Array(array)
+
+            if(!arrayBuffer) throw new Error("不支持的数组类型" + tem)
+
             const buffer = device.createBuffer({
-                size: float32Array.byteLength,
+                size: arrayBuffer.byteLength,
                 usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC | GPUBufferUsage.STORAGE
             })
-            device.queue.writeBuffer(buffer, 0, float32Array)
+            device.queue.writeBuffer(buffer, 0, arrayBuffer as any)
             buffers.push({ name, buffer })
         })
 
@@ -444,7 +479,13 @@ export class GpuComputed {
             syncBuffers.map(async item => {
                 await item.buffer.mapAsync(GPUMapMode.READ)
                 const mappedRange = item.buffer.getMappedRange()
-                const result = [...new Float32Array(mappedRange)]
+
+                let arrayBuffer: Float32Array | Uint32Array | Int32Array | null = null
+                if(this.template![item.name] instanceof Float32Array) arrayBuffer = new Float32Array(mappedRange)
+                else if(this.template![item.name] instanceof Uint32Array) arrayBuffer = new Uint32Array(mappedRange)
+                else if(this.template![item.name] instanceof Int32Array) arrayBuffer = new Int32Array(mappedRange)
+                else arrayBuffer = new Float32Array(mappedRange)
+                const result = [...arrayBuffer]
                 return result
             })
         )
@@ -484,20 +525,28 @@ export class GpuComputed {
      */
     static buildBufferTypeByData(data: Record<string, any>) {
         const bufferDataType = Object.keys(data).reduce((obj, k) => {
-            const value = data[k]
+            let value = data[k]
+            
+            if (Array.isArray(value) && typeof value[0] === 'number') value = new Float32Array()
+            
             if (Array.isArray(value)) {
-                if (typeof value[0] === 'number') obj[k] = []
-                else if (typeof value[0] === "object" || value.length) {
+                if (typeof value[0] === "object" || value.length) {
                     const buffer = buildStructTypeByData(value[0])
                     obj[k] = buffer
                 }
                 else console.log(`字段：${k}， 不支持该值对应数据类型或数组为空`)
-            } else if (typeof value === "object") {
+            } 
+            else if (ArrayBuffer.isView(value) && !(value instanceof DataView)) {
+                obj[k] = value
+            }
+            else if (typeof value === "object") {
                 const buffer = buildStructTypeByData(value)
                 obj[k] = buffer.layout
-            } else console.log(`字段：${k}， 不支持的数据类型`)
+            } 
+            else console.log(`字段：${k}， 不支持的数据类型`)
+
             return obj
-        }, {} as Record<string, IStructArray | IStruct | number[]>)
+        }, {} as Record<string, IStructArray | IStruct | ArrayBufferView>)
         return bufferDataType
     }
 
@@ -532,4 +581,7 @@ export class GpuComputed {
         if (map) return results.map((data, i) => gpuComputed.dataMap(data, synchronize![i]))
         return results
     }
+    
 }
+
+

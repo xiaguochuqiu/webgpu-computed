@@ -7,7 +7,7 @@
 <style scoped></style>
 
 <script setup lang="ts">
-import { GpuComputed } from "@/utils/GpuComputed"
+import { GpuComputed, AtomicUint32Array } from "@/utils/GpuComputed"
 import * as WGSL_Fun from "@/utils/WGSL_Fun"
 import { reactive } from "vue"
 
@@ -22,13 +22,15 @@ async function start() {
   const gpuComputed = await GpuComputed.fromByData({
     data: {
       obbList: [{ quaternion: [0, 0, 0, 0], size: [0, 0, 0], center: [0, 0, 0] }],
-      points: [1],
-      results: [1]
+      points: new Float32Array(),
+      results: new Float32Array(),
+      count : new AtomicUint32Array()
     },
     workgroupSize: [256, 1, 1],
     beforeCodes: [WGSL_Fun.quat_rotate, WGSL_Fun.point_in_obb],
     code: `
-        if(index >= arrayLength(&points)) {
+        let pointCount = arrayLength(&points) / 3u;
+        if(index >= pointCount) {
             return;
         }
         var point = vec3<f32>(
@@ -38,11 +40,11 @@ async function start() {
         );
         var obbLength = arrayLength(&obbList);
         for(var i = 0u; i < obbLength; i++) {
-            var obb = obbList[i];
-            let inside = point_in_obb( point, obb.center, obb.size, obb.quaternion );
+            let inside = point_in_obb( point, obbList[i].center, obbList[i].size, obbList[i].quaternion );
             if(inside) {
-                results[index] = f32(i);
-                break;
+              results[index] = f32(i);
+              atomicAdd(&count[0], 1u);
+              break;
             }
         }
     `,
@@ -60,7 +62,7 @@ async function start() {
 
   // 开始计算
   t = performance.now()
-  const group = gpuComputed.createBindGroup({ obbList, points, results: new Array(points.length).fill(-1) })
+  const group = gpuComputed.createBindGroup({ obbList, points, results: new Array(points.length).fill(-1), count: [0] })
   console.log("数据写入缓冲区耗时", performance.now() - t, "ms")
 
   t = performance.now()
@@ -68,10 +70,11 @@ async function start() {
   console.log("gpu计算耗时", performance.now() - t, "ms")
 
   t = performance.now()
-  const results = await gpuComputed.computed(group, [Math.ceil(points.length / 3 / 256)], ['results'])
+  const results = await gpuComputed.computed(group, [Math.ceil(points.length / 3 / 256)], ['count'])
   console.log("gpu计算+获取结果耗时", performance.now() - t, "ms")
 
-  console.log("命中点结果数：", results[0].filter(v => v != -1).length)
+  console.log("命中点结果数：", results[0])
+  console.log( results )
 }
 
 const messages = reactive<string[][]>([])
