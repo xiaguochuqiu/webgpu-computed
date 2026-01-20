@@ -348,7 +348,7 @@ export class GpuComputed {
             let array: number[] = []
             if (isStruct(tem)) array = buildStruct(value, tem as IStruct)
             else if (isStructArray(tem)) array = buildStructArray(value, tem as IStructArray)
-            else if (Array.isArray(value)) array.push(...value)
+            else if (Array.isArray(value)) array = value
 
             const float32Array = new Float32Array(array)
             const buffer = device.createBuffer({
