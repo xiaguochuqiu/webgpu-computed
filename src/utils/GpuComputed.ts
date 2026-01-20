@@ -7,6 +7,7 @@ type WGSl_TYPE =
     | "vec4"
     | "mat3x3"
     | "mat4x4"
+    // | "array"
 
 type GpuComputedOption = {
     workgroupSize?: [number, number, number]
@@ -148,6 +149,7 @@ const TYPE_SIZE: Record<WGSl_TYPE, number> = {
     vec4: 4,
     mat3x3: 12,
     mat4x4: 16,
+    // array: Infinity
 }
 
 // 大小为f32数量，并非字节，方便计算(项目用于js的数值计算，全部以f32为主)
@@ -158,6 +160,7 @@ const TYPE_ALIGN: Record<any, any> = {
     vec4: 4,
     mat3x3: 4,
     mat4x4: 4,
+    // array: 1
 }
 
 const wgslTypes = ["f32", "vec2", "vec3", "vec4", "mat3x3", "mat4x4"]

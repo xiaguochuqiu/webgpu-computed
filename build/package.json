@@ -1,13 +1,18 @@
 {
   "name": "webgpu-computed",
-  "version": "0.0.7",
+  "version": "0.0.10",
   "description": "对webgpu的封装，处理了繁琐的前置工作，只关注wgsl本身逻辑",
   "main": "./src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "webgpu", "computed", "web", "js"
+    "webgpu",
+    "gpu",
+    "compute",
+    "wgsl",
+    "typescript",
+    "javascript"
   ],
   "dependencies": {
     "webgpu": "^0.3.8"
@@ -16,6 +21,10 @@
     "type": "git",
     "url": "https://github.com/xiaguochuqiu/webgpu-computed.git"
   },
+  "bugs": {
+    "url": "https://github.com/xiaguochuqiu/webgpu-computed/issues"
+  },
+  "homepage": "https://github.com/xiaguochuqiu/webgpu-computed#readme",
   "author": "夏过初秋",
   "license": "ISC"
 }

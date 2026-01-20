@@ -16,7 +16,7 @@ export default function ({ mode }: any) {
     plugins: [
       env.VITE_LIB === 'true' ? dts({
         tsconfigPath: "./tsconfig.app.json",
-        rollupTypes: true,
+        rollupTypes: false,
         // copyDtsFiles: true
       }) : null,
       vue(), 

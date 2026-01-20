@@ -120,7 +120,7 @@ async function runAllFeaturesExample() {
             synchronize: ['output']
         });
 
-        console.log('大数组计算结果 (前10个):', largeResults[0].slice(0, 10));
+        console.log('大数组计算结果 (前10个):', (largeResults[0] as number[]).slice(0, 10));
 
         // 6. 使用回调函数示例
         console.log('\n=== 使用回调函数 ===');
@@ -138,7 +138,7 @@ async function runAllFeaturesExample() {
             data: callbackData,
             workgroupCount: [1],
             synchronize: ['squares'],
-            onSuccess: ({ code, bufferInfoList, results }) => {
+            onSuccess: ({ gpuComputed, group, results }) => {
                 console.log('回调函数触发，计算平方结果:', results[0]); // [100, 400, 900]
             }
         });

@@ -1,7 +1,11 @@
 {
   "name": "webgpu-computed",
-  "private": true,
-  "version": "0.0.0",
+  "private": false,
+  "version": "1.0.0",
+  "description": "一个简化的 WebGPU 计算库，封装了繁琐的初始化和缓冲区管理，让开发者专注于 WGSL 着色器逻辑。",
+  "main": "dist/index.js",
+  "module": "dist/index.es.js",
+  "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
     "dev": "vite --mode dev",
@@ -9,6 +13,17 @@
     "lib": "vite build --mode lib",
     "preview": "vite preview"
   },
+  "keywords": ["webgpu", "gpu", "compute", "wgsl", "typescript", "javascript"],
+  "author": "夏过初秋",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xiaguochuqiu/webgpu-computed.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xiaguochuqiu/webgpu-computed/issues"
+  },
+  "homepage": "https://github.com/xiaguochuqiu/webgpu-computed#readme",
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
     "@tailwindcss/vite": "^4.1.12",
