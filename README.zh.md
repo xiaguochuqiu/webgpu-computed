@@ -1,7 +1,7 @@
 # webgpu-computed
 
 🌐 其他语言版本：
-- [English](./README.en.md)
+- [English](./README.md)
 
 一个简化的 WebGPU 计算库，封装了繁琐的初始化和缓冲区管理，让开发者专注于 WGSL 着色器逻辑。
 

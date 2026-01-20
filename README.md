@@ -1,7 +1,7 @@
 # webgpu-computed
 
 🌐 Other language versions:
-- [简体中文](./README.md)
+- [简体中文](./README.zh.md.md)
 
 A simplified WebGPU computing library that encapsulates tedious initialization and buffer management, allowing developers to focus on WGSL shader logic.
 
