@@ -449,7 +449,7 @@ export class GpuComputed {
      * @param synchronize 需要同步的数据字段
      * @returns 
      */
-    async computed(group: BufferGroup, workgroupCount: [number, number?, number?], synchronize?: string[]) {
+    async computed(group: BufferGroup, workgroupCount: [number, number?, number?], synchronize: string[] = []) {
         if (!this.pipeline) throw new Error("未找到可用计算管线，请确保计算管线已经创建成功")
         const device = this.device!
         const pipeline = this.pipeline!
@@ -475,7 +475,8 @@ export class GpuComputed {
         device.queue.submit([encoder.finish()])
         await device.queue.onSubmittedWorkDone()
 
-        const results = await Promise.all(
+        const map = new Map<string, number[]>()
+        await Promise.all(
             syncBuffers.map(async item => {
                 await item.buffer.mapAsync(GPUMapMode.READ)
                 const mappedRange = item.buffer.getMappedRange()
@@ -486,9 +487,11 @@ export class GpuComputed {
                 else if(this.template![item.name] instanceof Int32Array) arrayBuffer = new Int32Array(mappedRange)
                 else arrayBuffer = new Float32Array(mappedRange)
                 const result = [...arrayBuffer]
-                return result
+                map.set(item.name, result)
             })
         )
+
+        const results = synchronize.map(name => map.get(name)!)
         return results
     }
 
