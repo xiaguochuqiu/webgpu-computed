@@ -326,16 +326,24 @@ export class GpuComputed {
         })
     }
 
-    /** 根据数据创建buffer组
-     * @param data 
+    /**
+     * 根据数据创建buffer组
+     * @param data 数据
+     * @param bindGroup 已创建的bindGroup, 会在没有传入对应数据时使用，用于Buffer重复利用，不需要重新构建，按名字判断，所以请确保名称和类型一致性
+     * @returns 
      */
-    createBindGroup(data: Record<string, any>) {
+    createBindGroup(data: Record<string, any>, bindGroup?: { group: GPUBindGroup; buffers: { name: string; buffer: GPUBuffer}[]}) {
+
         if (!this.template) throw new Error("创建buffer组错误，未找到可用数据模版")
         if (!this.device) throw new Error("创建buffer组错误，未找到可用的gpu设备，请确保初始化完计算管线")
 
         const device = this.device!
             , template = this.template
             , buffers: { name: string, buffer: GPUBuffer }[] = []
+            , bufferMap = bindGroup?.buffers?.reduce((map, item) => {
+                map.set(item.name, item.buffer)
+                return map
+            }, new Map<string, GPUBuffer>())
 
         function buildStruct(valueObj: any, tem: IStruct, offset = 0, data?: number[]) {
             if (!data) {
@@ -368,10 +376,16 @@ export class GpuComputed {
         }
 
         Object.keys(template).forEach((name) => {
-            if (!(name in data)) throw new Error(`传入的数据中，不存在${name}字段`)
+            if (!(name in data)) {
+                if(bufferMap && bufferMap.has(name)) {
+                    return buffers.push({ name, buffer: bufferMap.get(name)! })
+                }
+                throw new Error(`传入的数据中，不存在${name}字段`)
+            }
             const tem = template[name]
             const value = data[name]
             let array: number[] = []
+            
             if (isStruct(tem)) array = buildStruct(value, tem as IStruct)
             else if (isStructArray(tem)) array = buildStructArray(value, tem as IStructArray)
             else if (Array.isArray(value)) array = value

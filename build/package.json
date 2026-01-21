@@ -1,6 +1,6 @@
 {
   "name": "webgpu-computed",
-  "version": "0.0.12",
+  "version": "0.0.14",
   "description": "对webgpu的封装，处理了繁琐的前置工作，只关注wgsl本身逻辑",
   "main": "./src/index.js",
   "scripts": {
