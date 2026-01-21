@@ -384,12 +384,11 @@ export class GpuComputed {
             }
             const tem = template[name]
             const value = data[name]
-            let array: number[] = []
+            let array: any = []
             
             if (isStruct(tem)) array = buildStruct(value, tem as IStruct)
             else if (isStructArray(tem)) array = buildStructArray(value, tem as IStructArray)
-            else if (Array.isArray(value)) array = value
-
+            else if (Array.isArray(value) || ArrayBuffer.isView(value)) array = value
 
             let arrayBuffer: Float32Array | Uint32Array | Int32Array | null = null
 
