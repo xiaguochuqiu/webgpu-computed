@@ -345,14 +345,15 @@ export class GpuComputed {
                 return map
             }, new Map<string, GPUBuffer>())
 
-        function buildStruct(valueObj: any, tem: IStruct, offset = 0, data?: number[]) {
+        function buildStruct(valueObj: any, tem: IStruct, offset = 0, data?: Float32Array) {
+            if(ArrayBuffer.isView(valueObj) || Array.isArray(valueObj)) return valueObj
             if (!data) {
                 const last = tem[tem.length - 1] as IStructBaseType
                     , stride = last.offset! + last.size!
 
                 let maxAlign = 1
                 for (const item of tem) maxAlign = Math.max(maxAlign, TYPE_ALIGN[item.type])
-                data = data ?? new Array(roundUp(stride, maxAlign)).fill(0)
+                data = data ?? new Float32Array(roundUp(stride, maxAlign)).fill(0)
             }
 
             tem.forEach(item => {
@@ -367,7 +368,8 @@ export class GpuComputed {
         }
 
         function buildStructArray(values: any[], tem: IStructArray) {
-            const data: number[] = new Array(tem.stride! * values.length).fill(0)
+            if(ArrayBuffer.isView(values) || typeof values[0] === "number") return values
+            const data = new Float32Array(tem.stride! * values.length).fill(0)
             values.forEach((value, i) => {
                 const offset = i * tem.stride!
                 buildStruct(value, tem.layout, offset, data)
@@ -599,5 +601,3 @@ export class GpuComputed {
     }
     
 }
-
-
