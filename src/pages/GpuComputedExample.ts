@@ -120,7 +120,7 @@ async function runAllFeaturesExample() {
             synchronize: ['output']
         });
 
-        console.log('大数组计算结果 (前10个):', (largeResults[0] as number[]).slice(0, 10));
+        console.log('大数组计算结果 (前10个):', (largeResults[0] as Float32Array).slice(0, 10));
 
         // 6. 使用回调函数示例
         console.log('\n=== 使用回调函数 ===');

@@ -426,7 +426,7 @@ export class GpuComputed {
      * @param array 
      * @param key 
      */
-    dataMap(array: number[], key: string) {
+    dataMap(array: Float32Array | Uint32Array | Int32Array, key: string) {
         if (!(key in this.template!)) throw new Error("未找到数据字段：" + key)
         if (isStructArray(this.template![key])) {
             const tems = this.template![key] as IStructArray
@@ -438,7 +438,7 @@ export class GpuComputed {
                 const obj: Record<string, number | number[]> = {}
                 tems.layout.forEach(item => {
                     const data = array.slice(base + item.offset!, base + item.offset! + item.size!)
-                    obj[item.name] = data.length === 1 ? data[0] : data
+                    obj[item.name] = data.length === 1 ? data[0] : [...data]
                 })
                 list.push(obj)
             }
@@ -450,7 +450,7 @@ export class GpuComputed {
             const obj: Record<string, number | number[]> = {}
             tem.forEach(item => {
                 const data = array.slice(item.offset!, item.offset! + item.size!)
-                obj[item.name] = data.length === 1 ? data[0] : data
+                obj[item.name] = data.length === 1 ? data[0] : [...data]
             })
             return obj
         }
@@ -490,7 +490,7 @@ export class GpuComputed {
         device.queue.submit([encoder.finish()])
         await device.queue.onSubmittedWorkDone()
 
-        const map = new Map<string, number[]>()
+        const map = new Map<string, Float32Array | Uint32Array | Int32Array>()
         await Promise.all(
             syncBuffers.map(async item => {
                 await item.buffer.mapAsync(GPUMapMode.READ)
@@ -501,8 +501,7 @@ export class GpuComputed {
                 else if(this.template![item.name] instanceof Uint32Array) arrayBuffer = new Uint32Array(mappedRange)
                 else if(this.template![item.name] instanceof Int32Array) arrayBuffer = new Int32Array(mappedRange)
                 else arrayBuffer = new Float32Array(mappedRange)
-                const result = [...arrayBuffer]
-                map.set(item.name, result)
+                map.set(item.name, arrayBuffer)
             })
         )
 
@@ -589,7 +588,7 @@ export class GpuComputed {
         workgroupCount: [number, number?, number?]
         synchronize?: string[]
         map?: boolean
-        onSuccess?: (opt: { gpuComputed: GpuComputed, group: BufferGroup, results: number[][] }) => void
+        onSuccess?: (opt: { gpuComputed: GpuComputed, group: BufferGroup, results: (Float32Array | Uint32Array | Int32Array)[] }) => void
     } & GpuComputedOption) {
         let { data, map = false, workgroupCount, synchronize, onSuccess, ...option } = opt
         const gpuComputed = await this.fromByData({ data, ...option })
@@ -599,5 +598,4 @@ export class GpuComputed {
         if (map) return results.map((data, i) => gpuComputed.dataMap(data, synchronize![i]))
         return results
     }
-    
 }
