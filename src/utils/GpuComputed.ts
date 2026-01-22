@@ -49,6 +49,23 @@ type BufferDataType = Record<string, (number[]) | ArrayBufferView | IStruct | IS
 
 type WgslScalarType = "f32" | "i32" | "u32"
 
+type InitOption = {
+    // 适配器
+    featureLevel?: string
+    powerPreference?: GPUPowerPreference
+    forceFallbackAdapter?: boolean
+    xrCompatible?: boolean
+
+    // 设备
+    requiredFeatures?: Iterable<GPUFeatureName>
+    requiredLimits?: Record<
+        string,
+        | GPUSize64
+        | undefined
+    >
+    defaultQueue?: GPUQueueDescriptor
+}
+
 function arrayBufferViewToWgslType(
   value: ArrayBufferView
 ): WgslScalarType {
@@ -512,7 +529,7 @@ export class GpuComputed {
     /** 初始化gpu设备
      * @returns 
      */
-    static async init() {
+    static async init(opt: InitOption = {}) {
         if (adapter && device) return
 
         // 非浏览器环境
@@ -524,9 +541,9 @@ export class GpuComputed {
         }
 
         if (!navigator.gpu) throw new Error("该环境不支持webgpu")
-        if (!adapter) adapter = await navigator.gpu.requestAdapter({})
+        if (!adapter) adapter = await navigator.gpu.requestAdapter(opt)
         if (!adapter) throw new Error("获取适配器失败")
-        device = await adapter.requestDevice() as GPUDevice
+        device = await adapter.requestDevice(opt) as GPUDevice
         if (!adapter) throw new Error("获取设备失败")
     }
 
